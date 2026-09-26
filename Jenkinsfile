@@ -50,7 +50,7 @@ pipeline {
                 bat "docker run -d --name ${CONTAINER_NAME} -p 3000:3000 ${IMAGE_NAME}:${BUILD_NUMBER}"
 
                 echo "Waiting for the application to start..."
-                bat "timeout /t 5 /nobreak >nul"
+                bat "ping 127.0.0.1 -n 6 >nul"
 
                 echo "Checking application health..."
                 bat "curl -f http://localhost:3000/health"

@@ -48,3 +48,32 @@ describe("Task Manager API", () => {
     expect(response.statusCode).toBe(404);
   });
 });
+
+test("PUT /tasks/:id updates a task", async () => {
+  const response = await request(app)
+    .put("/tasks/1")
+    .send({
+      title: "Updated Jenkins task",
+      completed: true
+    });
+
+  expect(response.statusCode).toBe(200);
+  expect(response.body.id).toBe(1);
+  expect(response.body.title).toBe("Updated Jenkins task");
+  expect(response.body.completed).toBe(true);
+});
+
+test("DELETE /tasks/:id deletes an existing task", async () => {
+  const response = await request(app)
+    .delete("/tasks/2");
+
+  expect(response.statusCode).toBe(204);
+});
+
+test("DELETE /tasks/:id returns 404 for an unknown task", async () => {
+  const response = await request(app)
+    .delete("/tasks/999");
+
+  expect(response.statusCode).toBe(404);
+  expect(response.body.error).toBe("Task not found");
+});

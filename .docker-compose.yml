@@ -1,0 +1,6 @@
+services:
+  task-manager:
+    build: .
+    container_name: task-manager-staging
+    ports:
+      - "3000:3000"

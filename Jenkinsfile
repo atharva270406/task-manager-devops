@@ -7,11 +7,12 @@ pipeline {
     }
 
     stages {
+
         stage("Build") {
             steps {
                 echo "Building Node.js project..."
-                sh "npm ci"
-                sh "npm run build"
+                bat "npm ci"
+                bat "npm run build"
                 archiveArtifacts artifacts: "*.tgz", fingerprint: true
             }
         }
@@ -19,46 +20,55 @@ pipeline {
         stage("Test") {
             steps {
                 echo "Running automated tests..."
-                sh "npm test"
+                bat "npm test"
             }
         }
 
         stage("Code Quality") {
             steps {
                 echo "Running ESLint code quality checks..."
-                sh "npm run lint"
+                bat "npm run lint"
             }
         }
 
         stage("Security") {
             steps {
                 echo "Running dependency security audit..."
-                sh "npm audit --audit-level=high"
+                bat "npm audit --audit-level=high"
             }
         }
 
         stage("Deploy") {
             steps {
-                echo "Building and deploying Docker staging container..."
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
-                sh "docker rm -f ${CONTAINER_NAME} || true"
-                sh "docker run -d --name ${CONTAINER_NAME} -p 3000:3000 ${IMAGE_NAME}:${BUILD_NUMBER}"
-                sh "sleep 5"
-                sh "curl -f http://localhost:3000/health"
+                echo "Building Docker staging image..."
+                bat "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
+
+                echo "Removing previous staging container if it exists..."
+                bat "docker rm -f ${CONTAINER_NAME} || exit /b 0"
+
+                echo "Starting staging container..."
+                bat "docker run -d --name ${CONTAINER_NAME} -p 3000:3000 ${IMAGE_NAME}:${BUILD_NUMBER}"
+
+                echo "Waiting for the application to start..."
+                bat "timeout /t 5 /nobreak >nul"
+
+                echo "Checking application health..."
+                bat "curl -f http://localhost:3000/health"
             }
         }
 
         stage("Release") {
             steps {
-                echo "Creating a release tag for the successful build..."
-                sh "docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:release-${BUILD_NUMBER}"
+                echo "Creating release Docker tag..."
+                bat "docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:release-${BUILD_NUMBER}"
             }
         }
 
         stage("Monitoring") {
             steps {
-                echo "Checking production/staging health endpoint..."
-                sh "curl -f http://localhost:3000/health"
+                echo "Checking application health..."
+                bat "curl -f http://localhost:3000/health"
+
                 echo "Monitoring check passed. Application is healthy."
             }
         }
@@ -68,6 +78,7 @@ pipeline {
         success {
             echo "Pipeline completed successfully."
         }
+
         failure {
             echo "Pipeline failed. Check the stage logs for details."
         }
